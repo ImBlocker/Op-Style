@@ -72,12 +72,12 @@ def parse_args():
 
 
 def save_game_history(filename, game_history):
-    # 确保文件夹存在
+    # Ensure the folder exists
     folder_path = '/mnt/671cbd8b-55cf-4eb4-af6d-a4ab48e8c9d2/JL/1PP'
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
-    # 完整的文件路径
+    # Complete file path
     file_path = os.path.join(folder_path, filename)
 
     def convert_to_serializable(obj):
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     total_params = sum([param.nelement() for param in agent.parameters()])
     print("Model's total parameters:", total_params)
 
-    game_history = []  # 初始化游戏历史记录
+    game_history = []  # Initialize game history recording
 
     for update in range(starting_update, args.num_updates + 1):
         for step in range(0, args.num_steps):
@@ -251,7 +251,7 @@ if __name__ == "__main__":
                 e.printStackTrace()
                 raise
 
-            # 记录当前步骤
+            # Record current step
             game_history.append({
                 "step": step,
                 "observations": next_obs.cpu().numpy().tolist(),
@@ -261,18 +261,18 @@ if __name__ == "__main__":
                 "infos": infos
             })
 
-            # 检测一局比赛是否结束
+            # Check if a round has ended
             for idx, info in enumerate(infos):
                 if "episode" in info.keys():
-                    # 保存当前局的游戏历史记录
+                    # Save the game history for the current round
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f'game_history_{timestamp}_match_{idx}.json'
                     save_game_history(filename, game_history)
 
-                    # 重置 game_history，准备记录下一局
+                    # Reset game_history to record the next round
                     game_history = []
 
-                    # 打印比赛结果
+                    # Print the result of the match
                     if args.ai:
                         print("against", args.ai, info["microrts_stats"]["WinLossRewardFunction"])
                     else:

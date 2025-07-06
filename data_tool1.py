@@ -12,58 +12,58 @@ import json
 
 def fix_json_format(json_str):
     """
-    修复 JSON 字符串中的常见格式错误（如缺少逗号）。
+    Fix JSON format errors (e.g., missing commas).
     """
-    # 修复 }{ 和 ][ 之间缺少逗号的问题
+    # Fix }{ and ][ missing commas
     fixed_json_str = json_str.replace("}{", "},{").replace("][", "],[")
     return fixed_json_str
 
 
 def load_and_fix_json(file_path):
     """
-    读取 JSON 文件并尝试修复格式错误。
+    Read the JSON file and try to fix format errors.
     """
     with open(file_path, "r", encoding="utf-8") as f:
         json_str = f.read()
 
     try:
-        # 尝试直接解析 JSON
+        # Try to parse JSON directly
         data = json.loads(json_str)
     except json.JSONDecodeError as e:
-        print(f"检测到 JSON 格式错误: {e}")
-        # 尝试修复 JSON 格式
+        print(f"Detected JSON format error: {e}")
+        # Try to fix JSON format
         fixed_json_str = fix_json_format(json_str)
         try:
             data = json.loads(fixed_json_str)
-            print("已修复 JSON 文件并成功加载。")
+            print("JSON file fixed and loaded successfully.")
         except json.JSONDecodeError as e:
-            print(f"修复失败，无法加载 JSON 文件: {e}")
+            print(f"Fix failed, unable to load JSON file: {e}")
             return None
     return data
 
 
-# 处理两个四层嵌套数组，生成新的观测数据
+# Process two four-layer nested arrays to generate new observation data
 def process_observations(obs1, obs2):
-    new_obs = []  # 用于存储处理后的观测数据
+    new_obs = []  # Store processed observation data
 
-    # 遍历每个观测组
+    # Traverse each observation group
     for group1, group2 in zip(obs1, obs2):
-        new_group = []  # 用于存储处理后的观测组
-        # 遍历每个二维数组
+        new_group = []  # Store processed observation group
+        # Traverse each 2D array
 
-        # 遍历矩阵的每一行
+        # Traverse each row of the matrix
         for row1, row2 in zip(group1, group2):
-            new_row = []  # 用于存储处理后的行
-            # 比较前12位（与操作）和第13位（或操作）
+            new_row = []  # Store processed row
+            # Compare first 12 bits (AND operation) and 13th bit (OR operation)
             for col_index in range(len(row1)):
                 if col_index < 12:
-                    # 前12位进行与操作
+                    # First 12 bits perform AND operation
                     new_row.append(row1[col_index] and row2[col_index])
                 elif col_index == 12:
-                    # 第13位进行或操作
+                    # 13th bit perform OR operation
                     new_row.append(row1[col_index] or row2[col_index])
                 else:
-                    # 其余位正常比较
+                    # Other bits normal comparison
                     new_row.append(row1[col_index] and row2[col_index])
 
             new_group.append(new_row)
@@ -73,24 +73,24 @@ def process_observations(obs1, obs2):
 
 
 def p0_data(data):
-    # input_file = 'game_history_20250225_152757.json'  # 原始文件路径
-    # output_file = 'processed_observations.json'  # 输出文件路径
+    # input_file = 'game_history_20250225_152757.json'  # Original file path
+    # output_file = 'processed_observations.json'  # Output file path
     # data = load_json_file(input_file)
 
-    # 遍历每一步，处理观测数据
+    # Traverse each step, process observation data
     for step_data in data:
         observations = step_data['observations']
         if len(observations) < 2:
-            print(f"步骤 {step_data['step']}: observations 中观测组数量不足，无法处理。")
+            print(f"Step {step_data['step']}: observation groups insufficient, unable to process.")
             continue
 
         obs1 = observations[0]
         obs2 = observations[1]
 
-        # 处理两组观测数据
+        # Process two groups of observation data
         new_obs = process_observations(obs1, obs2)
 
-        # 将处理后的观测数据存入新的结构中
+        # Store processed observation data in new structure
         step_data['observations'] = new_obs
         step_data['actions'] = step_data['actions'][1]
 
@@ -116,10 +116,10 @@ def flatten_to_1d_with_subarrays(multi_dim_array):
     flattened = []
     for sub_array in multi_dim_array:
         if isinstance(sub_array, list) and any(isinstance(item, list) for item in sub_array):
-            # 如果子数组是多维的，展平它
+            # If sub-array is multi-dimensional, flatten it
             flattened.extend(flatten_to_1d_with_subarrays(sub_array))
         else:
-            # 如果子数组是一维的或最小的数组，保持不变
+            # If sub-array is one-dimensional or minimal array, keep unchanged
             flattened.append(sub_array)
     return flattened
 
@@ -128,10 +128,10 @@ def dim_reduction(data):
     processed_data = []
     for item in data:
         step = item['step']
-        # # 展平observation中的多维数组为一维数组，但保持最小的数组不变
+        # # Flatten multi-dimensional arrays in observation to one-dimensional arrays, but keep minimal arrays unchanged
         # flattened_observation = flatten_to_1d_with_subarrays(item['observation'])
 
-        # # 展平action中的多维数组为一维数组，但保持最小的数组不变
+        # # Flatten multi-dimensional arrays in action to one-dimensional arrays, but keep minimal arrays unchanged
         # flattened_action = flatten_to_1d_with_subarrays(item['action'])
 
         # flattened_observations = flatten_to_1d_with_subarrays(item['p1']['observations'])
@@ -154,9 +154,9 @@ def dim_reduction(data):
 
 def merge_observations_and_actions(data):
     """
-    将JSON数据中的p1的observations和p2的action一一对应合并。
-    如果长度不一致，用0填充较短的部分。
-    合并后的数据命名为`state`，并保留`step`字段。
+    Merge p1's observations and p2's actions in JSON data one-to-one.
+    If lengths are inconsistent, fill the shorter part with zeros.
+    The merged data is named `state`, and the `step` field is retained.
     """
     merged_data = []
 
@@ -165,28 +165,28 @@ def merge_observations_and_actions(data):
         observations = step_info['observations']
         actions = step_info['action']
 
-        # 确定每个step中p1和p2的最大长度
+        # Determine the maximum length of p1 and p2 in each step
         max_length = max(len(observations), len(actions))
 
-        # 初始化合并后的state
+        # Initialize merged state
         merged_step = []
 
         for i in range(max_length):
-            # 获取p1的observation，如果超出范围则用0填充
+            # Get p1's observation, fill with zeros if out of range
             observation = observations[i] if i < len(observations) else [0] * len(observations[0])
 
-            # 获取p2的action，如果超出范围则用0填充
+            # Get p2's action, fill with zeros if out of range
             action = actions[i] if i < len(actions) else [0] * len(actions[0])
 
-            # 如果p1的observation全为0，则将对应的p2的action也设置为全0
+            # If p1's observation is all zeros, set the corresponding p2's action to all zeros
             if all(obs == 0 for obs in observation):
                 action = [0] * len(action)
 
-            # 合并p1的observation和p2的action
+            # Merge p1's observation and p2's action
             state = observation + action
             merged_step.append(state)
 
-        # 保留step字段，并将合并后的数据命名为stat,e
+        # Retain step field, and name the merged data state
         merged_data.append({
             "step": step,
             "state": merged_step
@@ -200,18 +200,17 @@ def merge_observations_and_actions(data):
 #     for step_info in data:
 #     for step_info in data:
 #         state = step_info.get("state", [])
-#         state_count = len(state)  # 统计state数组的个数
+#         state_count = len(state)  # Count the number of state arrays
 
 #     return state_count
 
 # def merge_ob(data):
 #     """
-#     处理每个step中的state数据。
-#     将state的前27位按照[5, 5, 3, 8, 6]分组，每组中找到值为1的索引作为新的值，
-#     最后用这5个新值替换原state的前27位。
+#     Process each step's state data.
+#     Replace the first 27 bits of the state according to the grouping method.
 #     """
-#     group_sizes = [5, 5, 3, 8, 6]  # 分组大小
-#     total_size = sum(group_sizes)  # 总共27位
+#     group_sizes = [5, 5, 3, 8, 6]  # Group sizes
+#     total_size = sum(group_sizes)  # Total 27 bits
 
 #     result = []
 
@@ -221,14 +220,14 @@ def merge_observations_and_actions(data):
 #         processed_states = []
 
 #         for state in states:
-#             new_state = state[total_size:]  # 保留原state的第27位之后的部分
+#             new_state = state[total_size:]  # Keep the part of the state after the 27th bit
 #             start = 0
 
-#             # 处理前27位，按照分组方式
+#             # Process the first 27 bits, according to the grouping method
 #             for group_size in group_sizes:
 #                 group = state[start:start + group_size]
-#                 index = group.index(1) if 1 in group else -1  # 找到值为1的索引，如果没有则为0
-#                 new_state.insert(0, index+1)  # 将新值插入到新state的前面
+#                 index = group.index(1) if 1 in group else -1  # Find the index of value 1, if not present then 0
+#                 new_state.insert(0, index+1)  # Insert the new value at the beginning of the new state
 #                 start += group_size
 
 #             processed_states.append(new_state)
@@ -238,42 +237,42 @@ def merge_observations_and_actions(data):
 #     return result
 
 def process_state(state):
-    # 前27位
+    # First 27 bits
     first_27 = state[:29]
 
-    # 分组
+    # Grouping
     groups = [
-        first_27[:5],  # 前5位
-        first_27[5:10],  # 接下来的5位
-        first_27[10:13],  # 接下来的3位
-        first_27[13:21],  # 接下来的8位
-        first_27[21:27]  # 最后的6位
+        first_27[:5],  # First 5 bits
+        first_27[5:10],  # Next 5 bits
+        first_27[10:13],  # Next 3 bits
+        first_27[13:21],  # Next 8 bits
+        first_27[21:27]  # Last 6 bits
     ]
 
-    # 生成新的5个数字
+    # Generate new 5 numbers
     new_numbers = []
     for group in groups:
-        # print("当前组", group)
-        # 找到值为1的下标，并加1
+        # print("Current group", group)
+        # Find the index of value 1 and add 1
         indices = [i + 1 for i, val in enumerate(group) if val == 1]
-        # 如果全为0，则用0替代
+        # If all zeros, use 0 as replacement
         if not indices:
             new_numbers.append(0.0)
-            # print("下标 0")
+            # print("Index 0")
             # break
         else:
-            # print("下标", int(''.join(map(str, indices))))
-            # 将下标合并为一个数字
+            # print("Index", int(''.join(map(str, indices))))
+            # Combine indices into a number
             num = int(''.join(map(str, indices)))
             new_numbers.append(float(num))
         # print("end")
-    # 替换前29位
+    # Replace first 29 bits
     new_state = new_numbers + state[29:]
     return new_state
 
 
 def merge_ob(data):
-    # 处理每个step中的state
+    # Process each step's state
     for step in data:
         step["state"] = [process_state(state) for state in step["state"]]
 
@@ -281,11 +280,11 @@ def merge_ob(data):
 
 
 def process_data(data):
-    processed_data = p0_data(data)  # 检查格式
-    processed_data = convert_to_serializable(processed_data)  # 归一格式
-    processed_data = dim_reduction(processed_data)  # 降维
-    processed_data = merge_observations_and_actions(processed_data)  # 合并观察动作
-    processed_data = merge_ob(processed_data)  # 减小观察位数
+    processed_data = p0_data(data)  # Check format
+    processed_data = convert_to_serializable(processed_data)  # Normalize format
+    processed_data = dim_reduction(processed_data)  # Reduce dimensions
+    processed_data = merge_observations_and_actions(processed_data)  # Merge observations and actions
+    processed_data = merge_ob(processed_data)  # Reduce observation bits
 
     return processed_data
 
@@ -303,23 +302,23 @@ def process_data(data):
 # print("ok了z")
 
 
-# # 指定文件夹路径
+# # Specify folder path
 # folder_path = "/mnt/671cbd8b-55cf-4eb4-af6d-a4ab48e8c9d2/JL/PPOGDI-2"
 # target_folder = "/home/hello/sth/rts/MicroRTS-Py/experiments/JL/PPOGDI"
 # os.makedirs(target_folder, exist_ok=True)
 # # print("hh")
-# # 获取文件夹中的所有文件名
+# # Get all filenames in the folder
 # files = os.listdir(folder_path)
 #
-# # 过滤出JSON文件
+# # Filter out JSON files
 # json_files = [file for file in files if file.endswith(".json")]
 #
-# # 按文件名排序（可选）
+# # Sort by filename (optional)
 # json_files.sort()
 # i = 0
 # print(i)
 # # print(json_files)
-# # 顺序读取每个JSON文件s
+# # Sequentially read each JSON file
 # for json_file in json_files:
 #     i = i + 1
 #     print(i)
@@ -329,7 +328,7 @@ def process_data(data):
 #
 #     data = load_and_fix_json(file_path)
 #     if data is None:
-#         print(f"文件 {json_file} 无法修复，跳过处理。")
+#         print(f"File {json_file} cannot be fixed, skipping processing.")
 #         continue
 #
 #     processed_data = process_data(data)

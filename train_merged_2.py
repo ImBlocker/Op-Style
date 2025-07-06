@@ -17,10 +17,10 @@ class SequentialChunkedDataset(IterableDataset):
         self.shuffle_files = shuffle_files
         self.json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
         if self.shuffle_files:
-            random.shuffle(self.json_files)  # 文件间可打乱顺序，但文件内时序固定
+            random.shuffle(self.json_files)  # The order of files can be shuffled, but the temporal sequence within each file remains fixed
 
     def process_file(self, json_file):
-        """处理单个文件，返回该文件的所有数据（保持时序）"""
+        """Process a single file and return the data (keep time series fixed)."""
         file_path = os.path.join(self.folder_path, json_file)
         data = data_tool1.load_and_fix_json(file_path)
         if data is None:
@@ -28,15 +28,15 @@ class SequentialChunkedDataset(IterableDataset):
         # processed_data = data_tool.process_data(data)
         converted_data = convert_state_to_tensor(data)
 
-        # 调用 hum 函数生成特征
+        # Call hum function to generate features
         hum_features = hum.count_occurrences(data)
 
-        # 调试：检查张量形状
+        # Debug: Check tensor shapes
         # for state_item, hum_feature in zip(converted_data, hum_features):
         #     print("state_tensor shape:", state_item["state_tensor"].shape)
         # print("hum_feature shape:", hum_feature.shape)
 
-        # 合并 state_tensor 和 hum_feature
+        # Combine state_tensor and hum_feature
         combined_data = []
         for state_item, hum_feature in zip(converted_data, hum_features):
             # print("111", type(hum_feature["p2"]))
@@ -47,11 +47,11 @@ class SequentialChunkedDataset(IterableDataset):
         return combined_data
 
     def __iter__(self):
-        """迭代器：逐个文件加载数据"""
+        """Iterator: load data file by file."""
         for json_file in self.json_files:
             file_data = self.process_file(json_file)
             for item in file_data:
-                yield item  # 返回包含 state_tensor 和 hum_feature 的字典
+                yield item  # Return a dictionary containing state_tensor and hum_feature
 
 
 def convert_state_to_tensor(data):
@@ -77,28 +77,28 @@ def train_sequential_model(ckpt_save_path, old_checkpoint_path1, batch_size=100,
                            device_num='0', checkpoint_path=None, lambda_div=0.1):
     device = torch.device(f"cuda:{device_num}" if torch.cuda.is_available() else "cpu")
 
-    # 加载旧模型
+    # Load old model
     old_encoder = Xfeatmodel.XFeatModel().to(device)
     old_cpc_model = CPCmodel_PPOGDI.CDCK5(timestep=12, batch_size=batch_size, seq_len=16, encoder=old_encoder).to(
         device)
     checkpoint_old = torch.load(old_checkpoint_path1, map_location=device)
     old_encoder.load_state_dict(checkpoint_old['encoder_state_dict'])
     old_cpc_model.load_state_dict(checkpoint_old['cdc_model_state_dict'])
-    # 冻结旧模型参数
+    # Freeze old model parameters
     for param in old_encoder.parameters():
         param.requires_grad = False
     for param in old_cpc_model.parameters():
         param.requires_grad = False
 
-    # 初始化新模型
+    # Initialize new model
     encoder = Xfeatmodel.XFeatModel().to(device)
     cdc_model = CPCmodel_PPOGDI.CDCK5(timestep=12, batch_size=batch_size, seq_len=16, encoder=encoder).to(device)
 
-    # 优化器和学习率调度器
+    # Optimizer and Learning Rate Scheduler
     optimizer = Adam(list(encoder.parameters()), lr=lr)
     scheduler = StepLR(optimizer, step_size=n_epochs // 10, gamma=gamma_steplr)
 
-    # 如果提供了检查点路径，则加载模型状态
+    # If checkpoint path is provided, load model state
     start_epoch = 0
     if checkpoint_path:
         checkpoint = torch.load(checkpoint_path, map_location=device)
@@ -106,26 +106,26 @@ def train_sequential_model(ckpt_save_path, old_checkpoint_path1, batch_size=100,
         cdc_model.load_state_dict(checkpoint['cdc_model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         # scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        start_epoch = checkpoint['epoch'] + 1  # 从下一个 epoch 开始
+        start_epoch = checkpoint['epoch'] + 1  # Resume from next epoch
         print(f"Loaded checkpoint from {checkpoint_path}. Resuming from epoch {start_epoch}.")
 
-    # 创建数据集
+    # Create dataset
     dataset = SequentialChunkedDataset(folder_path="/mnt/671cbd8b-55cf-4eb4-af6d-a4ab48e8c9d2/JL/JL/PPOGDI", shuffle_files=True)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
         num_workers=4,
-        collate_fn=custom_collate,  # 使用自定义 collate 函数
+        collate_fn=custom_collate,  # Use custom collate function
         drop_last=True
     )
 
-    # 创建日志文件
+    # Create log file
     log_file_path = os.path.join(ckpt_save_path, "training_log.txt")
-    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)  # 确保目录存在
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)  # Ensure directory exists
     with open(log_file_path, "w") as log_file:
-        log_file.write("Epoch\tNCE Loss\tDiv Loss\tAccuracy\n")  # 写入表头
+        log_file.write("Epoch\tNCE Loss\tDiv Loss\tAccuracy\n")  # Write header
 
-    # 训练循环
+    # Training loop
     for epoch in range(start_epoch, n_epochs):
         hidden = None
         hidden_old = None
@@ -136,40 +136,40 @@ def train_sequential_model(ckpt_save_path, old_checkpoint_path1, batch_size=100,
         total_div_loss = 0
 
         for batch in dataloader:
-            # 分离 state_tensor 和 hum_feature
-            state_tensor = batch["state_tensor"].to(device)  # 形状: (batch_size, 12, 16, 16)
-            hum_features = batch["hum_feature"].to(device)  # 形状: (batch_size, 4)
+            # Separate state_tensor and hum_feature
+            state_tensor = batch["state_tensor"].to(device)  # Shape: (batch_size, 12, 16, 16)
+            hum_features = batch["hum_feature"].to(device)  # Shape: (batch_size, 4)
 
-            # 新隐藏状态
+            # New hidden state
             if hidden is None:
                 hidden = cdc_model.init_hidden(batch_size)
 
-            # 前向传播（传递 hum_features）
+            # Forward propagation (passing hum_features)
             accuracy, nce_loss, hidden, feat = cdc_model(state_tensor, hum_features, hidden.detach())
 
-            # 旧的
+            # Old model
             with torch.no_grad():
                 if hidden_old is None:
                     hidden_old = old_cpc_model.init_hidden(batch_size)
                 _, _, hidden_old, feat_old = old_cpc_model(state_tensor, hum_features, hidden_old.detach())
 
-                # ==== 计算特征差异损失 ====
-            # 计算余弦相似度
-            cosine_sim = F.cosine_similarity(feat, feat_old.detach(), dim=1)  # 沿着特征维度计算相似度
-            divergence_loss = cosine_sim.mean()  # 最小化余弦相似度
-            total_loss = nce_loss + lambda_div * divergence_loss  # 总损失
+                # ==== Calculate feature divergence loss ====
+            # Calculate cosine similarity
+            cosine_sim = F.cosine_similarity(feat, feat_old.detach(), dim=1)  # Calculate similarity along feature dimension
+            divergence_loss = cosine_sim.mean()  # Minimize cosine similarity
+            total_loss = nce_loss + lambda_div * divergence_loss  # Total loss
 
-            # # 累计指标
+            # Cumulative Metrics
             # total_loss += nce_loss.item()
             total_accuracy += accuracy
             # batch_count += 1
 
-            # 反向传播
+            # Backpropagation
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
 
-            # 记录损失
+            # Record losses
             total_nce_loss += nce_loss.item()
             total_div_loss += divergence_loss.item()
             batch_count += 1
@@ -180,11 +180,11 @@ def train_sequential_model(ckpt_save_path, old_checkpoint_path1, batch_size=100,
         print(
             f"Epoch {epoch + 1}/{n_epochs} | NCE Loss: {avg_loss:.4f} | Div Loss: {avg_div:.4f} | Accuracy: {avg_acc:.2%}")
 
-        # 写入日志文件
+        # Write to log file
         with open(log_file_path, "a") as log_file:
             log_file.write(f"{epoch + 1}\t{avg_loss:.4f}\t{avg_div:.4f}\t{avg_acc:.2%}\n")
 
-        # 更新学习率并保存模型
+        # Update learning rate and save model
         scheduler.step()
         os.makedirs(ckpt_save_path, exist_ok=True)
         torch.save({
@@ -195,10 +195,10 @@ def train_sequential_model(ckpt_save_path, old_checkpoint_path1, batch_size=100,
             'epoch': epoch,
         }, os.path.join(ckpt_save_path, f"checkpoint_epoch_{epoch}.pt"))
 
-    print("训练完成，模型已保存。")
+    print("Training is complete, and the model has been saved.")
 
 
-# 主流程
+# Main process
 if __name__ == "__main__":
     train_sequential_model(
         ckpt_save_path=os.path.join('xcmd/PPOGDI2'),

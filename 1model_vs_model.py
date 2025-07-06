@@ -243,7 +243,7 @@ class Match:
 
 
 
-    # 处理数据
+    # Process data
 
 
     def run(self, num_matches=1):
@@ -254,31 +254,26 @@ class Match:
         else:
             results, game_history = self.run_m2(num_matches)
 
-        # 生成唯一的文件名
+        # Generate a unique filename
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f'game_history_{timestamp}.json'
 
-        # 保存游戏历史记录到 JL 文件夹
+        # Save game history to JL folder
         self.save_game_history(filename,results)
 
-        return results, game_history  # 返回两个值
-
+        return results, game_history  # Return two values
 
 
 
     def save_game_history(self, filename,results):
-        # 确保 JL 文件夹存在
+        # Ensure JL folder exists
         folder_path = '/mnt/671cbd8b-55cf-4eb4-af6d-a4ab48e8c9d2/JL/PPOGDI-2'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-    # def save_game_history(self, filename, results):
-    #     # 确保 JL 文件夹存在
-    #     folder_path = os.path.join('JL', 'ppogc')
-    #     if not os.path.exists(folder_path):
-    #         os.makedirs(folder_path)
 
-        # 完整的文件路径
+
+        # Complete file path
         file_path = os.path.join(folder_path, filename)
 
         def convert_to_serializable(obj):
@@ -299,13 +294,12 @@ class Match:
             flattened = []
             for sub_array in multi_dim_array:
                 if isinstance(sub_array, list) and any(isinstance(item, list) for item in sub_array):
-                    # 如果子数组是多维的，展平它
+                    # If the subarray is multidimensional, flatten it
                     flattened.extend(flatten_to_1d_with_subarrays(sub_array))
                 else:
-                    # 如果子数组是一维的或最小的数组，保持不变
+                    # If the subarray is one-dimensional or the smallest array, keep it unchanged
                     flattened.append(sub_array)
             return flattened
-
 
 
         def tensor_to_list(tensor):
@@ -333,15 +327,14 @@ class Match:
                     # },
                     # 'info': tensor_to_list(item.get('info', []))
                     "step": item['step'],
-                    "observations": tensor_to_list(item['observations']),  # 当前观察值
-                    "actions": tensor_to_list(item['actions']),  # 当前动作
-                    "rewards": item['rewards'],  # 当前奖励
-                    "dones": item['dones'],  # 当前是否结束标志
-                    "infos": item['infos']  # 当前附加信息
+                    "observations": tensor_to_list(item['observations']),  # Current observation
+                    "actions": tensor_to_list(item['actions']),  # Current action
+                    "rewards": item['rewards'],  # Current reward
+                    "dones": item['dones'],  # Current done flag
+                    "infos": item['infos']  # Current additional information
                 }
                 processed_data.append(processed_item)
             return processed_data
-
 
 
 
@@ -359,7 +352,7 @@ class Match:
 
     def run_m0(self, num_matches):
         results = []
-        self.game_history = []  # 重置游戏历史记录
+        self.game_history = []  # Reset game history
         next_obs = torch.Tensor(self.envs.reset()).to(self.device)
         step = 0
         while True:
@@ -379,11 +372,11 @@ class Match:
                 print(e)
                 raise
 
-            # 记录当前步骤
+            # Record current step
             self.game_history.append({
                 'step': step,
-                'observation': next_obs.cpu().numpy().tolist(),  # 转换为列表
-                'action': action.cpu().numpy().tolist(),  # 转换为列表
+                'observation': next_obs.cpu().numpy().tolist(),  # Convert to list
+                'action': action.cpu().numpy().tolist(),  # Convert to list
                 # 'done': ds,
                 # 'info': infos
             })
@@ -392,12 +385,12 @@ class Match:
                 if "episode" in info.keys():
                     results += [info["microrts_stats"]["WinLossRewardFunction"]]
                     if len(results) >= num_matches:
-                        return results, self.game_history  # 返回游戏历史记录
+                        return results, self.game_history  # Return game history
 
 
     def run_m1(self, num_matches):
         results = []
-        self.game_history = []  # 重置游戏历史记录
+        self.game_history = []  # Reset game history
         next_obs = torch.Tensor(self.envs.reset()).to(self.device)
         step = 0
         while True:
@@ -412,15 +405,15 @@ class Match:
                 # # print("p2_mask:", p2_mask.shape)
                 #
                 # # print(f"p1_obs shape: {p1_obs.shape}")
-                # 选择前27个通道
+                # Select first 27 channels
                 p1_obs = p1_obs[:, :, :, :27]
                 p2_obs = p2_obs[:, :, :, :27]
-                # 调整维度顺序为 (batch_size, channels, height, width)
+                # Adjust dimension order to (batch_size, channels, height, width)
                 p1_obs = p1_obs.permute(0, 1, 2, 3)
                 p2_obs = p2_obs.permute(0, 3, 1, 2)
 
 
-                # # 确保传递的数据形状是 (16, 16, 27)
+                # # Make sure the shape of the passed data is (16, 16, 27)
                 # p1_obs = p1_obs[0].permute(1, 2, 0)
 
 
@@ -440,38 +433,39 @@ class Match:
                 print(e)
                 raise
 
-            # 记录当前步骤
+            # Record current step
             self.game_history.append({
                 # 'step': step,
                 # 'p1': {
-                #     'observations': p1_obs.cpu().numpy().tolist(),  # 玩家一的所有观察值
-                #     'actions': p1_action  # 玩家一的所有动作
+                #     'observations': p1_obs.cpu().numpy().tolist(),  # Player One all observations
+                #     'actions': p1_action  # Player One all actions
                 # },
                 # 'p2': {
-                #     'observations': p2_obs.cpu().numpy().tolist(),  # 玩家二的所有观察值
-                #     'actions': p2_action  # 玩家二的所有动作
+                #     'observations': p2_obs.cpu().numpy().tolist(),  # Player Two all observations
+                #     'actions': p2_action  # Player Two all actions
                 # },
                 # 'done': ds,
                 # 'info': infos
                 "step": step,
-                "observations": next_obs.cpu().numpy().tolist(),  # 当前观察值
-                "actions": action.cpu().numpy().tolist(),  # 当前动作
-                "rewards": rs.tolist(),  # 当前奖励
-                "dones": ds.tolist(),  # 当前是否结束标志
-                "infos": infos  # 当前附加信息
+                "observations": next_obs.cpu().numpy().tolist(),  # Current observation
+                "actions": action.cpu().numpy().tolist(),  # Current action
+                "rewards": rs.tolist(),  # Current reward
+                "dones": ds.tolist(),  # Current done flag
+                "infos": infos  # Current additional information
 
             })
 
             for idx, info in enumerate(infos):
                 if "episode" in info.keys():
-                    # self.game_history[-1]["info"] = info  # 更新最后一个步骤的info
+                    # Update info of last step
+                    # self.game_history[-1]["info"] = info
                     results += [info["microrts_stats"]["WinLossRewardFunction"]]
                     if len(results) >= num_matches:
-                        return results, self.game_history  # 返回游戏历史记录
+                        return results, self.game_history  # Return game history
 
     def run_m2(self, num_matches):
         results = []
-        self.game_history = []  # 重置游戏历史记录
+        self.game_history = []  # Reset game history
         self.envs.reset()
         step = 0
         while True:
@@ -488,11 +482,11 @@ class Match:
             )
             next_obs = torch.Tensor(next_obs).to(self.device)
 
-            # 记录当前步骤
+            # Record current step
             self.game_history.append({
                 'step': step,
-                'observation': next_obs.cpu().numpy().tolist(),  # 转换为列表
-                'action': [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]],  # 转换为列表
+                'observation': next_obs.cpu().numpy().tolist(),  # Convert to list
+                'action': [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]],  # Convert to list
                 'done': done,
                 # 'info': infos
             })
@@ -501,7 +495,7 @@ class Match:
                 if "episode" in info.keys():
                     results += [info["microrts_stats"]["WinLossRewardFunction"]]
                     if len(results) >= num_matches:
-                        return results, self.game_history  # 返回游戏历史记录
+                        return results, self.game_history  # Return game history
 
 def get_ai_type(ai_name):
     if ai_name[-3:] == ".pt":
@@ -574,5 +568,3 @@ if __name__ == "__main__":
     print('win=', win)
     print('loss=', loss)
     print('draw=', draw)
-
-

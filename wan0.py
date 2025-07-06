@@ -151,15 +151,7 @@ class CategoricalMasked(Categorical):
         logits = torch.where(masks.bool(), logits, mask_value)
         super(CategoricalMasked, self).__init__(probs, logits, validate_args)
 
-        # # 确保 mask_value 在正确的设备上
-        # mask_value = mask_value.to(logits.device)
-        #
-        # # 确保 masks 和 logits 的尺寸匹配
-        # if masks.shape != logits.shape:
-        #     masks = masks.expand_as(logits)
-        #
-        # logits = torch.where(masks.bool(), logits, mask_value)
-        # super(CategoricalMasked, self).__init__(probs, logits, validate_args)
+
 
 
 class Transpose(nn.Module):

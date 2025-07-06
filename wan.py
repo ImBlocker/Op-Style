@@ -151,15 +151,7 @@ class CategoricalMasked(Categorical):
         logits = torch.where(masks.bool(), logits, mask_value)
         super(CategoricalMasked, self).__init__(probs, logits, validate_args)
 
-        # # 确保 mask_value 在正确的设备上
-        # mask_value = mask_value.to(logits.device)
-        #
-        # # 确保 masks 和 logits 的尺寸匹配
-        # if masks.shape != logits.shape:
-        #     masks = masks.expand_as(logits)
-        #
-        # logits = torch.where(masks.bool(), logits, mask_value)
-        # super(CategoricalMasked, self).__init__(probs, logits, validate_args)
+        
 
 
 class Transpose(nn.Module):
@@ -294,31 +286,20 @@ class Agent(nn.Module):
         return action, logprob.sum(1).sum(1), entropy.sum(1).sum(1), invalid_action_masks
 
     def get_action_and_value(self, x, action=None, invalid_action_masks=None, envs=None, device=None):
-        # print("Input shape:", x.shape)  # 添加这行
+        # print("Input shape:", x.shape)  
         hidden = self.network(x)
-        # print("Hidden shape after network:", hidden.shape)  # 添加这行
+        # print("Hidden shape after network:", hidden.shape)  
         hidden = self.network(x)
         logits = self.actor(hidden)
         grid_logits = logits.reshape(-1, envs.action_plane_space.nvec.sum())
         split_logits = torch.split(grid_logits, envs.action_plane_space.nvec.tolist(), dim=1)
-        # print("invalid_action_masks shape2:", invalid_action_masks.shape)
-        # print("logits shape2:", logits.shape)
-        # print("iam shape2:", self.masks.shape)
-        # 打印 logits 的形状
-        # print("logits shape2:", logits.shape)
-        # print("invalid_action_masks shape2:", invalid_action_masks.shape)
-        # for i, logits_part in enumerate(split_logits):
-        #     print(f"split_logits[{i}] shape2:", logits_part.shape)
 
         if action is None:
             invalid_action_masks = invalid_action_masks.view(-1, invalid_action_masks.shape[-1])
             split_invalid_action_masks = torch.split(invalid_action_masks, envs.action_plane_space.nvec.tolist(), dim=1)
 
 
-            # # 打印 masks 的形状
-            # print("invalid_action_masks shape:", invalid_action_masks.shape)
-            # for i, iam in enumerate(split_invalid_action_masks):
-            #     print(f"split_invalid_action_masks[{i}] shape:", iam.shape)
+
 
 
             multi_categoricals = [

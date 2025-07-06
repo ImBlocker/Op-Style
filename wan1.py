@@ -151,15 +151,6 @@ class CategoricalMasked(Categorical):
         logits = torch.where(masks.bool(), logits, mask_value)
         super(CategoricalMasked, self).__init__(probs, logits, validate_args)
 
-        # # 确保 mask_value 在正确的设备上
-        # mask_value = mask_value.to(logits.device)
-        #
-        # # 确保 masks 和 logits 的尺寸匹配
-        # if masks.shape != logits.shape:
-        #     masks = masks.expand_as(logits)
-        #
-        # logits = torch.where(masks.bool(), logits, mask_value)
-        # super(CategoricalMasked, self).__init__(probs, logits, validate_args)
 
 
 class Transpose(nn.Module):
@@ -279,7 +270,6 @@ class Agent(nn.Module):
         # print("invalid_action_masks shape2:", invalid_action_masks.shape)
         # print("logits shape2:", logits.shape)
         # print("iam shape2:", self.masks.shape)
-        # 打印 logits 的形状
         # print("logits shape2:", logits.shape)
         # print("invalid_action_masks shape2:", invalid_action_masks.shape)
         # for i, logits_part in enumerate(split_logits):
@@ -290,7 +280,6 @@ class Agent(nn.Module):
             split_invalid_action_masks = torch.split(invalid_action_masks, envs.action_plane_space.nvec.tolist(), dim=1)
 
 
-            # # 打印 masks 的形状
             # print("invalid_action_masks shape:", invalid_action_masks.shape)
             # for i, iam in enumerate(split_invalid_action_masks):
             #     print(f"split_invalid_action_masks[{i}] shape:", iam.shape)
