@@ -39,5 +39,5 @@ Generate Log Data (using selected agents):
 3. The three train_merged files are trained models.
 
 ## 📧 Contact
-For inquiries: zjp1000tm@outlook.com
+For inquiries: zjp1999tm@outlook.com
 Have questions? Please send email to zjp1999tm@outlook.com
