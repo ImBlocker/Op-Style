@@ -13,7 +13,7 @@
 
 ## 📊 Dataset Description
 The experimental dataset (Dataset.zip) contains game logs of opponent style interactions, which are used for model training and validation. The dataset includes:
-- Multiple categories of opponent style samples (e.g., aggressive, defensive, balanced)
+- Multiple categories of opponent style samples 
 - Spatiotemporal feature records of game states at 100ms intervals
 - Annotation files for style classification labels
 
